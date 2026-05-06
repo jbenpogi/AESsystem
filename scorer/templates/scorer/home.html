@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automatic Essay Scoring System</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: var(--bs-gray-100);
+        }
+
+        header {
+            background: var(--bs-white);
+        }
+
+        .bw-card {
+            border: 1px solid var(--bs-border-color);
+        }
+
+        .bw-panel {
+            border: 1px solid var(--bs-border-color);
+            background: var(--bs-white);
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+            color: var(--bs-secondary-color);
+        }
+
+        .form-control {
+            border-color: var(--bs-border-color);
+        }
+
+        .form-control:focus {
+            border-color: var(--bs-dark);
+            box-shadow: none;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+        }
+
+        hr {
+            border-top: 1px solid var(--bs-border-color);
+            opacity: 1;
+        }
+
+        .side-panel {
+            flex: 0 0 300px;
+            width: 300px;
+            border: 0;
+            border-right: 1px solid var(--bs-border-color);
+            border-radius: 0 !important;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .content-area {
+            min-width: 0;
+        }
+
+        .essay-panel {
+            border: 0;
+        }
+
+        @media (max-width: 767.98px) {
+            .side-panel {
+                position: static;
+                height: auto;
+                width: 100%;
+                flex-basis: auto;
+                border-right: 0;
+                border-bottom: 1px solid var(--bs-border-color);
+            }
+        }
+    </style>
+</head>
+<body class="text-dark">
+
+    <header class="border-bottom">
+        <div class="container-fluid px-4 py-3 text-center">
+            <h1 class="h3 mb-0 fw-semibold">Automatic Essay Scoring System</h1>
+        </div>
+    </header>
+
+    <main class="container-fluid px-0">
+        {% if error %}
+            <div class="px-4 pt-4">
+                <div class="alert alert-light bw-card mb-0">
+                    {{ error }}
+                </div>
+            </div>
+        {% endif %}
+
+        <form method="POST" class="d-flex flex-column flex-md-row">
+            {% csrf_token %}
+
+            <aside class="bw-panel p-3 side-panel">
+                <h4 class="h5 mb-3 fw-semibold">Teacher Customization</h4>
+
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Minimum Words</label>
+                        <input type="number" name="min_words" class="form-control"
+                               value="{{ min_words|default:100 }}" min="100">
+                    </div>
+
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Maximum Words</label>
+                        <input type="number" name="max_words" class="form-control"
+                               value="{{ max_words|default:1000 }}" min="100">
+                    </div>
+                </div>
+
+                <hr class="my-3">
+
+                <h4 class="h5 mb-3 fw-semibold">Scoring Weights</h4>
+
+                <div class="mb-3">
+                    <label class="form-label">Content and Relevance</label>
+                    <input type="number" name="content_points" class="form-control"
+                           value="{{ content_points|default:50 }}" min="0" max="100">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Grammar and Mechanics</label>
+                    <input type="number" name="grammar_points" class="form-control"
+                           value="{{ grammar_points|default:30 }}" min="0" max="100">
+                </div>
+
+                <div class="mb-0">
+                    <label class="form-label">Formatting and Effort</label>
+                    <input type="number" name="formatting_points" class="form-control"
+                           value="{{ formatting_points|default:20 }}" min="0" max="100">
+                </div>
+            </aside>
+
+            <section class="flex-grow-1 content-area px-4 py-4">
+                <div class="bw-panel rounded-3 p-3 essay-panel">
+                    <h4 class="h5 mb-3 fw-semibold">Essay</h4>
+
+                    <div class="mb-3">
+                        <label class="form-label">Essay Question</label>
+                        <textarea name="question" class="form-control" rows="3"
+                                placeholder="Enter the essay question here...">{{ request.POST.question }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Your Essay</label>
+                        <textarea name="essay" class="form-control" rows="10"
+                                placeholder="Enter the essay here...">{{ request.POST.essay }}</textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-dark btn-lg">Submit Essay</button>
+                    </div>
+                </div>
+
+                {% if score is not None %}
+                    <div class="bw-panel rounded-3 p-3 mt-4">
+                        <h2 class="h4 mb-3 fw-semibold">Result</h2>
+                        <p class="mb-1"><strong>Total Score:</strong> {{ score }}/100</p>
+                        <p class="mb-1"><strong>Grammar and Mechanics:</strong> {{ grammar }}</p>
+                        <p class="mb-1"><strong>Content and Relevance:</strong> {{ relevance }}</p>
+                        <p class="mb-0"><strong>Formatting and Effort:</strong> {{ other }}</p>
+                    </div>
+                {% endif %}
+
+                {% if highlighted_essay %}
+                    <div class="bw-panel rounded-3 p-3 mt-4">
+                        <h4 class="h5 mb-3 fw-semibold">Checked Essay</h4>
+                        <div class="border rounded p-3 bg-white text-dark">
+                            {{ highlighted_essay|safe }}
+                        </div>
+                    </div>
+                {% endif %}
+            </section>
+        </form>
+    </main>
+
+</body>
+</html>
